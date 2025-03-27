@@ -13,46 +13,49 @@ interface AnimatedGradientBorderProps {
 
 const AnimatedGradientBorder: React.FC<AnimatedGradientBorderProps> = ({
   children,
-  className = "",
-  containerClassName = "",
+  className,
+  containerClassName,
   borderWidth = 1,
-  animationDuration = 3,
-  colors = ["#4285F4", "#EA4335", "#FBBC05", "#34A853"]
+  animationDuration = 8,
+  colors = ["#6366f1", "#8b5cf6", "#d946ef", "#ec4899"],
 }) => {
   return (
-    <div className={cn("relative", containerClassName)}>
-      <div
-        className="absolute inset-0 rounded-xl"
-        style={{
-          background: `linear-gradient(90deg, ${colors.join(", ")})`,
-          backgroundSize: "300% 300%",
-          animation: `gradient ${animationDuration}s ease infinite`,
-          padding: borderWidth,
-          borderRadius: "inherit",
-        }}
-      />
+    <div className={cn("relative rounded-xl", containerClassName)}>
       <div
         className={cn(
-          "relative rounded-xl bg-background",
+          "absolute inset-0 rounded-xl",
+          "bg-gradient-to-r",
+          "animate-gradient-xy",
+          `p-${borderWidth}`,
           className
         )}
-      >
+        style={{
+          backgroundSize: "400% 400%",
+          backgroundImage: `linear-gradient(to right, ${colors.join(", ")})`,
+          animationDuration: `${animationDuration}s`,
+        }}
+      />
+      <style>
+        {`
+          @keyframes gradient-xy {
+            0% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: 0% 50%;
+            }
+          }
+          .animate-gradient-xy {
+            animation: gradient-xy var(--animation-duration, 8s) infinite;
+          }
+        `}
+      </style>
+      <div className="relative rounded-lg bg-background/80 backdrop-blur-sm h-full">
         {children}
       </div>
-
-      <style jsx>{`
-        @keyframes gradient {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-      `}</style>
     </div>
   );
 };
