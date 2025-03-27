@@ -42,6 +42,7 @@ const GeneratorPage: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<Record<string, string> | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<ExampleTemplate | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -50,13 +51,21 @@ const GeneratorPage: React.FC = () => {
     }
 
     setIsGenerating(true);
+    setError(null);
+    
     try {
+      toast.info("Generating your web application...", { duration: 10000 });
       const response = await generateWebApp(prompt);
+      console.log("Raw API response:", response);
+      
       const files = extractFilesFromResponse(response);
+      console.log("Extracted files:", files);
+      
       setGeneratedFiles(files);
       toast.success("Web application generated successfully!");
     } catch (error) {
       console.error("Generation error:", error);
+      setError(error instanceof Error ? error.message : "Unknown error occurred");
       toast.error("Failed to generate web application");
     } finally {
       setIsGenerating(false);
@@ -172,6 +181,13 @@ const GeneratorPage: React.FC = () => {
             </TabsContent>
           </Tabs>
 
+          {error && (
+            <div className="mt-8 p-4 border border-red-300 bg-red-50 rounded-md text-red-800">
+              <h3 className="font-bold mb-2">Error</h3>
+              <p>{error}</p>
+            </div>
+          )}
+
           {generatedFiles && Object.keys(generatedFiles).length > 0 && (
             <div className="mt-12 animate-slide-in">
               <h2 className="text-2xl font-bold mb-6">Generated Web Application</h2>
@@ -192,6 +208,8 @@ const GeneratorPage: React.FC = () => {
                 dependencies={{
                   "lucide-react": "latest",
                   "react-router-dom": "latest",
+                  "tailwindcss": "^3.3.0",
+                  "@tailwindcss/forms": "^0.5.7"
                 }}
                 className="w-full"
                 showFiles={true}

@@ -29,7 +29,7 @@ const SandpackPreview: React.FC<SandpackPreviewProps> = ({
     sandpackFiles[path] = { code: content };
   }
   
-  // Add the default App.js if not included
+  // Add default files if they don't exist
   if (!sandpackFiles["/App.js"] && !sandpackFiles["/App.jsx"] && !sandpackFiles["/App.tsx"]) {
     sandpackFiles["/App.js"] = {
       code: `
@@ -46,8 +46,74 @@ export default function App() {
       </div>
     </div>
   );
+}`,
+    };
+  }
+  
+  // Add index.js if it doesn't exist
+  if (!sandpackFiles["/index.js"] && !sandpackFiles["/index.jsx"] && !sandpackFiles["/index.tsx"] && 
+      !sandpackFiles["/src/index.js"] && !sandpackFiles["/src/index.jsx"] && !sandpackFiles["/src/index.tsx"]) {
+    sandpackFiles["/index.js"] = {
+      code: `
+import React from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App";
+import "./styles.css";
+
+const rootElement = document.getElementById("root");
+const root = createRoot(rootElement);
+root.render(<App />);
+`,
+    };
+  }
+  
+  // Add styles.css if it doesn't exist
+  if (!sandpackFiles["/styles.css"] && !sandpackFiles["/src/styles.css"]) {
+    sandpackFiles["/styles.css"] = {
+      code: `
+@import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
 }
-      `,
+`,
+    };
+  }
+  
+  // Add package.json if it doesn't exist
+  if (!sandpackFiles["/package.json"]) {
+    sandpackFiles["/package.json"] = {
+      code: JSON.stringify({
+        name: "generated-app",
+        version: "1.0.0",
+        description: "Generated web application",
+        dependencies: {
+          "react": "18.2.0",
+          "react-dom": "18.2.0",
+          ...dependencies
+        }
+      }, null, 2)
+    };
+  }
+  
+  // Add index.html if it doesn't exist
+  if (!sandpackFiles["/index.html"] && !sandpackFiles["/public/index.html"]) {
+    sandpackFiles["/index.html"] = {
+      code: `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generated App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+`
     };
   }
   
@@ -64,8 +130,8 @@ export default function App() {
             ...dependencies,
           },
           entry: Object.keys(sandpackFiles).find(
-            (file) => file.includes("App") || file.includes("index")
-          ) || "/App.js",
+            (file) => file.includes("index") && file.endsWith(".js")
+          ) || "/index.js",
         }}
       >
         <SandpackLayout>

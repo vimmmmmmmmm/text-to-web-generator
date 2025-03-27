@@ -98,10 +98,12 @@ export const extractFilesFromResponse = (response: string): Record<string, strin
       let content = match[2].trim();
       
       // Remove markdown code formatting if present
-      if (content.startsWith("```") && content.endsWith("```")) {
-        const lines = content.split("\n");
-        // Remove the first line (which contains ```) and the last line (which also contains ```)
-        content = lines.slice(1, lines.length - 1).join("\n");
+      if (content.startsWith("```")) {
+        const languageMarker = content.split("\n")[0];
+        content = content.replace(languageMarker, "");
+        if (content.endsWith("```")) {
+          content = content.substring(0, content.lastIndexOf("```")).trim();
+        }
       }
       
       // Handle specific file types that might need special processing
