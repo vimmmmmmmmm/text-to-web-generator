@@ -5,6 +5,12 @@ import { toast } from "sonner";
 const API_KEY = "AIzaSyDc7u7wTVdDG3zP18xnELKs0HX7-hImkmc";
 const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
+interface GenerationConfig {
+  temperature?: number;
+  maxOutputTokens?: number;
+  framework?: "react" | "react-ts";
+}
+
 interface GenerationRequest {
   contents: {
     role: string;
@@ -28,16 +34,31 @@ interface GenerationResponse {
   }[];
 }
 
-export const generateWebApp = async (prompt: string): Promise<string> => {
+export const generateWebApp = async (
+  prompt: string, 
+  config: GenerationConfig = {}
+): Promise<string> => {
   try {
+    const { 
+      temperature = 0.8, 
+      maxOutputTokens = 8192,
+      framework = "react"
+    } = config;
+    
+    const frameworkInstructions = framework === "react-ts" 
+      ? "Use React with TypeScript and TailwindCSS." 
+      : "Use React and TailwindCSS.";
+
     const requestData: GenerationRequest = {
       contents: [
         {
           role: "user",
           parts: [
             {
-              text: `Generate a React web application based on this description: "${prompt}". 
-              Use React and TailwindCSS. 
+              text: `Generate a ${framework} web application based on this description: "${prompt}". 
+              ${frameworkInstructions}
+              Make the design modern, responsive, and visually appealing.
+              Include detailed comments in the code to explain key functionality.
               Return your response in the following format:
               ---FILES---
               // Each file should be in this format:
@@ -52,11 +73,13 @@ export const generateWebApp = async (prompt: string): Promise<string> => {
         }
       ],
       generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 8192
+        temperature,
+        maxOutputTokens
       }
     };
 
+    console.log("Sending request to Gemini API...");
+    
     const response = await fetch(`${API_URL}?key=${API_KEY}`, {
       method: "POST",
       headers: {
@@ -67,6 +90,7 @@ export const generateWebApp = async (prompt: string): Promise<string> => {
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error("Gemini API error:", errorData);
       throw new Error(errorData.error?.message || "Error calling Gemini API");
     }
 
@@ -83,15 +107,20 @@ export const extractFilesFromResponse = (response: string): Record<string, strin
   const files: Record<string, string> = {};
   
   try {
+    console.log("Extracting files from response...");
+    
     // Extract content between ---FILES--- and ---ENDFILES---
     const filesContent = response.match(/---FILES---([\s\S]*?)---ENDFILES---/);
     
     if (!filesContent) {
+      console.error("Invalid response format - no FILES section found");
       throw new Error("Invalid response format");
     }
     
     // Split into individual files and process each one
     const fileMatches = [...filesContent[1].matchAll(/---FILE:(.*?)---([\s\S]*?)---ENDFILE---/g)];
+    
+    console.log(`Found ${fileMatches.length} files in response`);
     
     for (const match of fileMatches) {
       const filename = match[1].trim();
@@ -105,6 +134,8 @@ export const extractFilesFromResponse = (response: string): Record<string, strin
           content = content.substring(0, content.lastIndexOf("```")).trim();
         }
       }
+      
+      console.log(`Processing file: ${filename}`);
       
       // Handle specific file types that might need special processing
       if (filename === "package.json") {
@@ -129,6 +160,7 @@ export const extractFilesFromResponse = (response: string): Record<string, strin
     // If no files were extracted or it doesn't have an App component, provide defaults
     if (Object.keys(files).length === 0 || 
         (!files["/App.js"] && !files["/App.jsx"] && !files["/App.tsx"])) {
+      console.warn("No valid files found, using fallback App component");
       files["/App.js"] = `
 import React from "react";
 

@@ -101,6 +101,18 @@ export default {
 				'shimmer': {
 					'0%': { backgroundPosition: '-1000px 0' },
 					'100%': { backgroundPosition: '1000px 0' }
+				},
+				'spin-slow': {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' }
+				},
+				'typing': {
+					'0%': { width: '0%' },
+					'100%': { width: '100%' }
+				},
+				'blink': {
+					'0%, 100%': { borderColor: 'transparent' },
+					'50%': { borderColor: 'currentColor' }
 				}
 			},
 			animation: {
@@ -112,7 +124,9 @@ export default {
 				'slide-out': 'slide-out 0.5s ease-out',
 				'pulse-slow': 'pulse-slow 3s ease-in-out infinite',
 				'float': 'float 6s ease-in-out infinite',
-				'shimmer': 'shimmer 2s linear infinite'
+				'shimmer': 'shimmer 2s linear infinite',
+				'spin-slow': 'spin-slow 8s linear infinite',
+				'typing': 'typing 3.5s steps(40, end), blink .75s step-end infinite'
 			},
 			backdropFilter: {
 				'none': 'none',
@@ -121,7 +135,23 @@ export default {
 			transitionDuration: {
 				'2000': '2000ms',
 				'3000': '3000ms',
-			}
+			},
+			typography: {
+				DEFAULT: {
+					css: {
+						color: 'var(--foreground)',
+						a: {
+							color: 'var(--primary)',
+							'&:hover': {
+								color: 'color-mix(in srgb, var(--primary) 80%, black)',
+							},
+						},
+						'h1,h2,h3,h4,h5,h6': {
+							color: 'var(--foreground)',
+						},
+					},
+				},
+			},
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
