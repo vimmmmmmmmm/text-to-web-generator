@@ -90,36 +90,80 @@ export const extractFilesFromResponse = (response: string): Record<string, strin
       throw new Error("Invalid response format");
     }
     
-    // Split into individual files
-    const fileMatches = filesContent[1].matchAll(/---FILE:(.*?)---([\s\S]*?)---ENDFILE---/g);
+    // Split into individual files and process each one
+    const fileMatches = [...filesContent[1].matchAll(/---FILE:(.*?)---([\s\S]*?)---ENDFILE---/g)];
     
     for (const match of fileMatches) {
       const filename = match[1].trim();
-      const content = match[2].trim();
+      let content = match[2].trim();
       
-      files[filename] = content;
+      // Remove markdown code formatting if present
+      if (content.startsWith("```") && content.endsWith("```")) {
+        const lines = content.split("\n");
+        // Remove the first line (which contains ```) and the last line (which also contains ```)
+        content = lines.slice(1, lines.length - 1).join("\n");
+      }
+      
+      // Handle specific file types that might need special processing
+      if (filename === "package.json") {
+        try {
+          // If it's a package.json, make sure it's valid JSON
+          const parsedContent = JSON.parse(content);
+          content = JSON.stringify(parsedContent, null, 2);
+        } catch (e) {
+          console.error("Invalid package.json content, using default");
+          content = JSON.stringify({
+            "name": "generated-app",
+            "private": true,
+            "version": "0.0.0",
+            "type": "module"
+          }, null, 2);
+        }
+      }
+      
+      files[`/${filename}`] = content;
+    }
+    
+    // If no files were extracted or it doesn't have an App component, provide defaults
+    if (Object.keys(files).length === 0 || 
+        (!files["/App.js"] && !files["/App.jsx"] && !files["/App.tsx"])) {
+      files["/App.js"] = `
+import React from "react";
+
+export default function App() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="p-6 bg-white rounded-lg shadow-lg">
+        <h1 className="text-2xl font-bold text-center">App Generation Error</h1>
+        <p className="mt-2 text-gray-600 text-center">
+          There was an error processing the AI response. Please try again with a more detailed prompt.
+        </p>
+      </div>
+    </div>
+  );
+}`;
     }
     
     return files;
   } catch (error) {
     console.error("Error extracting files:", error);
     return {
-      "App.js": `
-        import React from "react";
-        
-        export default function App() {
-          return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100">
-              <div className="p-6 bg-white rounded-lg shadow-lg">
-                <h1 className="text-2xl font-bold text-center">Error Processing Response</h1>
-                <p className="mt-2 text-gray-600 text-center">
-                  There was an error processing the AI response. Please try again.
-                </p>
-              </div>
-            </div>
-          );
-        }
-      `
+      "/App.js": `
+import React from "react";
+
+export default function App() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="p-6 bg-white rounded-lg shadow-lg">
+        <h1 className="text-2xl font-bold text-center">Error Processing Response</h1>
+        <p className="mt-2 text-gray-600 text-center">
+          There was an error processing the AI response. Please try again.
+        </p>
+      </div>
+    </div>
+  );
+}
+`
     };
   }
 };
