@@ -8,10 +8,11 @@ import SandpackPreview from "@/components/SandpackPreview";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { generateWebApp, extractFilesFromResponse } from "@/services/gemini";
-import { Loader2, Zap, Save, Share } from "lucide-react";
+import { Loader2, Zap, Save, Share, Code, Eye, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import GeminiLogo from "@/components/ui/GeminiLogo";
 import AnimatedGradientBorder from "@/components/ui/AnimatedGradientBorder";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ExampleTemplate {
   title: string;
@@ -43,6 +44,8 @@ const GeneratorPage: React.FC = () => {
   const [generatedFiles, setGeneratedFiles] = useState<Record<string, string> | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<ExampleTemplate | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showResult, setShowResult] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -52,6 +55,7 @@ const GeneratorPage: React.FC = () => {
 
     setIsGenerating(true);
     setError(null);
+    setShowResult(false);
     
     try {
       toast.info("Generating your web application...", { duration: 10000 });
@@ -62,6 +66,7 @@ const GeneratorPage: React.FC = () => {
       console.log("Extracted files:", files);
       
       setGeneratedFiles(files);
+      setShowResult(true);
       toast.success("Web application generated successfully!");
     } catch (error) {
       console.error("Generation error:", error);
@@ -91,13 +96,13 @@ const GeneratorPage: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow pt-24 pb-16">
+      <main className="flex-grow pt-24 pb-16 overflow-x-hidden">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-12 animate-fade-in">
             <div className="flex justify-center mb-4">
               <GeminiLogo size={64} />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
               Text to Web Application
             </h1>
             <p className="text-xl text-muted-foreground">
@@ -105,102 +110,118 @@ const GeneratorPage: React.FC = () => {
             </p>
           </div>
 
-          <Tabs defaultValue="create" className="max-w-6xl mx-auto">
-            <TabsList className="grid grid-cols-2 mb-8">
-              <TabsTrigger value="create">Create New</TabsTrigger>
-              <TabsTrigger value="templates">Templates</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="create" className="animate-fade-in">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Describe Your Web Application</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <Textarea
-                      placeholder="Describe the web application you want to create. Be as detailed as possible about the layout, components, functionality, and design."
-                      className="min-h-[200px] resize-none"
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                    />
-                    
-                    <div className="flex flex-col sm:flex-row justify-end gap-4">
-                      <Button
-                        onClick={handleGenerate}
-                        disabled={isGenerating || !prompt.trim()}
-                        className="relative overflow-hidden group"
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="mr-2 h-4 w-4" />
-                            Generate Web App
-                          </>
-                        )}
-                        <span className="absolute inset-0 w-full h-full bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="templates" className="animate-fade-in">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {exampleTemplates.map((template, index) => (
-                  <AnimatedGradientBorder
-                    key={index}
-                    containerClassName="h-full"
-                    borderWidth={1}
-                  >
-                    <Card className="h-full bg-background/80 backdrop-blur-sm border-0">
-                      <CardHeader>
-                        <CardTitle>{template.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <p className="text-muted-foreground">
-                          {template.description}
-                        </p>
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => handleSelectTemplate(template)}
-                        >
-                          Use Template
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </AnimatedGradientBorder>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+          <div className={`transition-all duration-500 ease-in-out ${showResult ? (isMobile ? 'animate-slide-in' : 'translate-y-[-20px] scale-95 opacity-80') : ''}`}>
+            <Tabs defaultValue="create" className="max-w-6xl mx-auto">
+              <TabsList className="grid grid-cols-2 mb-8 w-full max-w-md mx-auto">
+                <TabsTrigger value="create" className="text-sm md:text-base">
+                  <Code className="mr-2 h-4 w-4" />
+                  Create New
+                </TabsTrigger>
+                <TabsTrigger value="templates" className="text-sm md:text-base">
+                  <LayoutGrid className="mr-2 h-4 w-4" />
+                  Templates
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="create" className="animate-fade-in">
+                <AnimatedGradientBorder className="shadow-lg">
+                  <Card className="border-0 bg-background/80 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Zap className="mr-2 h-5 w-5 text-yellow-500" />
+                        Describe Your Web Application
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        <Textarea
+                          placeholder="Describe the web application you want to create. Be as detailed as possible about the layout, components, functionality, and design."
+                          className="min-h-[200px] resize-none"
+                          value={prompt}
+                          onChange={(e) => setPrompt(e.target.value)}
+                        />
+                        
+                        <div className="flex flex-col sm:flex-row justify-end gap-4">
+                          <Button
+                            onClick={handleGenerate}
+                            disabled={isGenerating || !prompt.trim()}
+                            className="relative overflow-hidden group"
+                            size="lg"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Zap className="mr-2 h-4 w-4" />
+                                Generate Web App
+                              </>
+                            )}
+                            <span className="absolute inset-0 w-full h-full bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </AnimatedGradientBorder>
+              </TabsContent>
+              
+              <TabsContent value="templates" className="animate-fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {exampleTemplates.map((template, index) => (
+                    <AnimatedGradientBorder
+                      key={index}
+                      containerClassName="h-full"
+                      borderWidth={1}
+                    >
+                      <Card className="h-full bg-background/80 backdrop-blur-sm border-0">
+                        <CardHeader>
+                          <CardTitle>{template.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <p className="text-muted-foreground">
+                            {template.description}
+                          </p>
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => handleSelectTemplate(template)}
+                          >
+                            Use Template
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </AnimatedGradientBorder>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
 
           {error && (
-            <div className="mt-8 p-4 border border-red-300 bg-red-50 rounded-md text-red-800">
+            <div className="mt-8 p-4 border border-red-300 bg-red-50 rounded-md text-red-800 animate-slide-in">
               <h3 className="font-bold mb-2">Error</h3>
               <p>{error}</p>
             </div>
           )}
 
-          {generatedFiles && Object.keys(generatedFiles).length > 0 && (
-            <div className="mt-12 animate-slide-in">
-              <h2 className="text-2xl font-bold mb-6">Generated Web Application</h2>
-              
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <Button variant="outline" onClick={handleShareCode}>
-                  <Share className="mr-2 h-4 w-4" />
-                  Share
-                </Button>
-                <Button variant="outline" onClick={handleDownloadCode}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Download Code
-                </Button>
+          {showResult && generatedFiles && Object.keys(generatedFiles).length > 0 && (
+            <div className={`mt-12 ${isMobile ? 'animate-slide-in' : 'animate-fade-in'}`}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Generated Web Application</h2>
+                
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={handleShareCode} size="sm">
+                    <Share className="mr-2 h-4 w-4" />
+                    Share
+                  </Button>
+                  <Button variant="outline" onClick={handleDownloadCode} size="sm">
+                    <Save className="mr-2 h-4 w-4" />
+                    Download
+                  </Button>
+                </div>
               </div>
               
               <SandpackPreview
