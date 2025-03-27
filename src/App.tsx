@@ -5,11 +5,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
+import HomePage from "./pages/HomePage";
+import GeneratorPage from "./pages/GeneratorPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
-// Create a client
+// Create a QueryClient instance
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -21,9 +21,9 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/generator" element={<GeneratorPage />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>

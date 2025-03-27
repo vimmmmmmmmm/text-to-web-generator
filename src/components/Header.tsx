@@ -1,91 +1,52 @@
 
-import { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "react-router-dom";
+import { Github } from "lucide-react";
+import { ModeToggle } from "@/components/ModeToggle";
 import GeminiLogo from "@/components/ui/GeminiLogo";
-import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { Menu, X } from "lucide-react";
 
 const Header = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [scrolled]);
-
-  const navItems = [
-    { label: "Home", href: "/" },
-    { label: "Features", href: "#features" },
-    { label: "Examples", href: "#examples" },
-    { label: "Documentation", href: "#docs" },
-  ];
-
+  const location = useLocation();
+  
   return (
-    <header
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 py-4 transition-all duration-300 backdrop-blur-lg",
-        scrolled ? "bg-background/80 shadow-sm" : "bg-transparent"
-      )}
-    >
-      <div className="container mx-auto px-4 flex justify-between items-center">
-        <Link to="/" className="flex items-center space-x-2">
-          <GeminiLogo size={32} />
-          <span className="font-bold text-xl tracking-tight">Gemini Web Builder</span>
-        </Link>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-8">
-          {navItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className="text-foreground/80 hover:text-foreground transition-colors"
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          <Link to="/" className="flex items-center gap-2">
+            <GeminiLogo size={32} />
+            <span className="font-bold text-xl">Text to Web</span>
+          </Link>
+          
+          <nav className="hidden md:flex items-center gap-6">
+            <Link
+              to="/"
+              className={`text-sm font-medium transition-colors ${
+                location.pathname === "/" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              {item.label}
+              Home
+            </Link>
+            <Link
+              to="/generator"
+              className={`text-sm font-medium transition-colors ${
+                location.pathname === "/generator" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Generator
+            </Link>
+          </nav>
+          
+          <div className="flex items-center gap-4">
+            <ModeToggle />
+            <a href="https://github.com" target="_blank" rel="noreferrer">
+              <Button variant="outline" size="icon">
+                <Github className="h-4 w-4" />
+              </Button>
             </a>
-          ))}
-          <Button>Get Started</Button>
-        </nav>
-
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden p-2 rounded-full hover:bg-accent transition-colors"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {/* Mobile Navigation */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-background/95 backdrop-blur-lg absolute top-full left-0 right-0 border-b border-border animate-fade-in">
-          <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
-            {navItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                className="text-foreground/80 hover:text-foreground py-2 transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item.label}
-              </a>
-            ))}
-            <Button className="w-full">Get Started</Button>
           </div>
         </div>
-      )}
+      </div>
     </header>
   );
 };

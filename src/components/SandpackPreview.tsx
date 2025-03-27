@@ -1,16 +1,17 @@
 
-import React, { useRef, useEffect, useState } from 'react';
-import { Sandpack } from '@codesandbox/sandpack-react';
-import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { dracula } from '@codesandbox/sandpack-themes';
-import AnimatedGradientBorder from '@/components/ui/AnimatedGradientBorder';
+import React from "react";
+import {
+  SandpackProvider,
+  SandpackPreview as SandpackPreviewComponent,
+  SandpackCodeEditor,
+  SandpackLayout,
+  SandpackFileExplorer,
+} from "@codesandbox/sandpack-react";
+import { nightOwl } from "@codesandbox/sandpack-themes";
 
 interface SandpackPreviewProps {
   files: Record<string, string>;
   dependencies?: Record<string, string>;
-  entryFile?: string;
   className?: string;
   showFiles?: boolean;
 }
@@ -18,83 +19,61 @@ interface SandpackPreviewProps {
 const SandpackPreview: React.FC<SandpackPreviewProps> = ({
   files,
   dependencies = {},
-  entryFile = '/App.tsx',
-  className,
-  showFiles = true,
+  className = "",
+  showFiles = false,
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
+  // Create a proper file structure for Sandpack
+  const sandpackFiles: Record<string, { code: string }> = {};
+  
+  for (const [path, content] of Object.entries(files)) {
+    sandpackFiles[path] = { code: content };
+  }
+  
+  // Add the default App.js if not included
+  if (!sandpackFiles["/App.js"] && !sandpackFiles["/App.jsx"] && !sandpackFiles["/App.tsx"]) {
+    sandpackFiles["/App.js"] = {
+      code: `
+import React from "react";
 
-  useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, [files]);
-
+export default function App() {
   return (
-    <div className={cn("relative w-full", className)} ref={containerRef}>
-      {isLoading ? (
-        <div className="w-full h-96 flex items-center justify-center">
-          <Skeleton className="w-full h-full rounded-xl" />
-        </div>
-      ) : (
-        <AnimatedGradientBorder borderWidth={2} containerClassName="w-full">
-          <Tabs defaultValue="preview" className="w-full">
-            <TabsList className="mb-2">
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-              {showFiles && <TabsTrigger value="code">Code</TabsTrigger>}
-            </TabsList>
-            <TabsContent value="preview" className="rounded-xl overflow-hidden">
-              <Sandpack
-                template="react-ts"
-                theme={dracula}
-                options={{
-                  showNavigator: false,
-                  showTabs: false,
-                  showLineNumbers: true,
-                  editorHeight: 400,
-                  externalResources: [
-                    "https://cdn.tailwindcss.com",
-                  ],
-                }}
-                files={files}
-                customSetup={{
-                  dependencies: {
-                    "react": "latest",
-                    "react-dom": "latest",
-                    ...dependencies
-                  },
-                }}
-              />
-            </TabsContent>
-            {showFiles && (
-              <TabsContent value="code">
-                <Sandpack
-                  template="react-ts"
-                  theme={dracula}
-                  options={{
-                    showNavigator: true,
-                    showTabs: true,
-                    showLineNumbers: true,
-                    editorHeight: 500,
-                    externalResources: [
-                      "https://cdn.tailwindcss.com",
-                    ],
-                  }}
-                  files={files}
-                  customSetup={{
-                    dependencies: {
-                      "react": "latest",
-                      "react-dom": "latest",
-                      ...dependencies
-                    },
-                  }}
-                />
-              </TabsContent>
-            )}
-          </Tabs>
-        </AnimatedGradientBorder>
-      )}
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="p-6 bg-white rounded-lg shadow-lg">
+        <h1 className="text-2xl font-bold text-center">Welcome to your app!</h1>
+        <p className="mt-2 text-gray-600 text-center">
+          This is a default app created by the Text to Web Generator.
+        </p>
+      </div>
+    </div>
+  );
+}
+      `,
+    };
+  }
+  
+  return (
+    <div className={className}>
+      <SandpackProvider
+        template="react"
+        theme={nightOwl}
+        files={sandpackFiles}
+        customSetup={{
+          dependencies: {
+            "react": "latest",
+            "react-dom": "latest",
+            ...dependencies,
+          },
+          entry: Object.keys(sandpackFiles).find(
+            (file) => file.includes("App") || file.includes("index")
+          ) || "/App.js",
+        }}
+      >
+        <SandpackLayout>
+          {showFiles && <SandpackFileExplorer />}
+          <SandpackCodeEditor showLineNumbers showInlineErrors closableTabs />
+          <SandpackPreviewComponent showNavigator showRefreshButton />
+        </SandpackLayout>
+      </SandpackProvider>
     </div>
   );
 };

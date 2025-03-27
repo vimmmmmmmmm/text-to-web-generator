@@ -1,72 +1,20 @@
 
 import React from "react";
-import { cn } from "@/lib/utils";
 
 interface GeminiLogoProps {
-  className?: string;
   size?: number;
-  animated?: boolean;
+  className?: string;
 }
 
-const GeminiLogo: React.FC<GeminiLogoProps> = ({ 
-  className,
-  size = 48,
-  animated = true 
-}) => {
+const GeminiLogo: React.FC<GeminiLogoProps> = ({ size = 24, className = "" }) => {
   return (
-    <div className={cn("relative", className)} style={{ width: size, height: size }}>
-      <div 
-        className={cn(
-          "absolute rounded-full", 
-          animated ? "animate-pulse-slow" : "",
-          "bg-gem-blue"
-        )} 
-        style={{ 
-          width: size * 0.45, 
-          height: size * 0.45, 
-          top: 0, 
-          left: 0 
-        }}
-      />
-      <div 
-        className={cn(
-          "absolute rounded-full", 
-          animated ? "animate-pulse-slow animation-delay-150" : "",
-          "bg-gem-red"
-        )} 
-        style={{ 
-          width: size * 0.45, 
-          height: size * 0.45, 
-          top: 0, 
-          right: 0 
-        }}
-      />
-      <div 
-        className={cn(
-          "absolute rounded-full", 
-          animated ? "animate-pulse-slow animation-delay-300" : "",
-          "bg-gem-yellow"
-        )} 
-        style={{ 
-          width: size * 0.45, 
-          height: size * 0.45, 
-          bottom: 0, 
-          left: 0 
-        }}
-      />
-      <div 
-        className={cn(
-          "absolute rounded-full", 
-          animated ? "animate-pulse-slow animation-delay-450" : "",
-          "bg-gem-green"
-        )} 
-        style={{ 
-          width: size * 0.45, 
-          height: size * 0.45, 
-          bottom: 0, 
-          right: 0 
-        }}
-      />
+    <div className={`flex items-center justify-center relative ${className}`} style={{ width: size, height: size }}>
+      <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[2px]" style={{ padding: size * 0.1 }}>
+        <div className="bg-[#4285F4] rounded-tl-full"></div>
+        <div className="bg-[#EA4335] rounded-tr-full"></div>
+        <div className="bg-[#FBBC05] rounded-bl-full"></div>
+        <div className="bg-[#34A853] rounded-br-full"></div>
+      </div>
     </div>
   );
 };

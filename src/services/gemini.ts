@@ -1,111 +1,125 @@
+
 import { toast } from "sonner";
 
+// Replace with your actual Gemini API key
 const API_KEY = "AIzaSyDc7u7wTVdDG3zP18xnELKs0HX7-hImkmc";
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
-interface GenerateContentResponse {
-  candidates: Array<{
+interface GenerationRequest {
+  contents: {
+    role: string;
+    parts: {
+      text: string;
+    }[];
+  }[];
+  generationConfig: {
+    temperature: number;
+    maxOutputTokens: number;
+  };
+}
+
+interface GenerationResponse {
+  candidates: {
     content: {
-      parts: Array<{
+      parts: {
         text: string;
-      }>;
+      }[];
     };
-  }>;
+  }[];
 }
 
-export interface GeminiConfig {
-  temperature?: number;
-  maxTokens?: number;
-  topK?: number;
-  topP?: number;
-}
-
-export const generateWebApp = async (
-  prompt: string,
-  config: GeminiConfig = {}
-): Promise<string> => {
+export const generateWebApp = async (prompt: string): Promise<string> => {
   try {
+    const requestData: GenerationRequest = {
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `Generate a React web application based on this description: "${prompt}". 
+              Use React and TailwindCSS. 
+              Return your response in the following format:
+              ---FILES---
+              // Each file should be in this format:
+              ---FILE:filename.ext---
+              // Content of the file
+              ---ENDFILE---
+              // Then the next file, and so on
+              ---ENDFILES---
+              `
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 8192
+      }
+    };
+
     const response = await fetch(`${API_URL}?key=${API_KEY}`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `Create a React web application based on this prompt. Use Tailwind CSS for styling.
-                Return ONLY the complete React code files needed within a JSON structure.
-                The response should be in the format: 
-                {
-                  "files": {
-                    "/App.tsx": "// code here",
-                    "/components/Header.tsx": "// code here",
-                    // other files
-                  }
-                }
-                
-                User prompt: ${prompt}`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: config.temperature || 0.7,
-          maxOutputTokens: config.maxTokens || 8192,
-          topK: config.topK || 40,
-          topP: config.topP || 0.95,
-        },
-      }),
+      body: JSON.stringify(requestData)
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("Gemini API error:", errorData);
-      throw new Error(errorData.error?.message || "Failed to generate content");
+      throw new Error(errorData.error?.message || "Error calling Gemini API");
     }
 
-    const data = await response.json() as GenerateContentResponse;
-    
-    if (!data.candidates || data.candidates.length === 0) {
-      throw new Error("No response from Gemini API");
-    }
-
-    const textContent = data.candidates[0].content.parts[0].text;
-    
-    // Try to extract JSON from the response
-    try {
-      // Find JSON in the response (it might be surrounded by markdown code blocks)
-      const jsonMatch = textContent.match(/```json([\s\S]*?)```/) || 
-                        textContent.match(/```([\s\S]*?)```/) ||
-                        [null, textContent];
-      
-      const jsonString = jsonMatch[1] ? jsonMatch[1].trim() : textContent.trim();
-      const result = JSON.parse(jsonString);
-      
-      if (!result.files) {
-        throw new Error("No files found in the response");
-      }
-      
-      return JSON.stringify(result);
-    } catch (parseError) {
-      console.error("Failed to parse JSON:", parseError);
-      throw new Error("Failed to parse the generated code");
-    }
+    const data: GenerationResponse = await response.json();
+    return data.candidates[0].content.parts[0].text;
   } catch (error) {
     console.error("Error generating web app:", error);
-    toast.error("Failed to generate web application: " + (error as Error).message);
+    toast.error("Failed to generate web application");
     throw error;
   }
 };
 
 export const extractFilesFromResponse = (response: string): Record<string, string> => {
+  const files: Record<string, string> = {};
+  
   try {
-    const data = JSON.parse(response);
-    return data.files || {};
+    // Extract content between ---FILES--- and ---ENDFILES---
+    const filesContent = response.match(/---FILES---([\s\S]*?)---ENDFILES---/);
+    
+    if (!filesContent) {
+      throw new Error("Invalid response format");
+    }
+    
+    // Split into individual files
+    const fileMatches = filesContent[1].matchAll(/---FILE:(.*?)---([\s\S]*?)---ENDFILE---/g);
+    
+    for (const match of fileMatches) {
+      const filename = match[1].trim();
+      const content = match[2].trim();
+      
+      files[filename] = content;
+    }
+    
+    return files;
   } catch (error) {
-    console.error("Failed to extract files:", error);
-    return {};
+    console.error("Error extracting files:", error);
+    return {
+      "App.js": `
+        import React from "react";
+        
+        export default function App() {
+          return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-100">
+              <div className="p-6 bg-white rounded-lg shadow-lg">
+                <h1 className="text-2xl font-bold text-center">Error Processing Response</h1>
+                <p className="mt-2 text-gray-600 text-center">
+                  There was an error processing the AI response. Please try again.
+                </p>
+              </div>
+            </div>
+          );
+        }
+      `
+    };
   }
 };
