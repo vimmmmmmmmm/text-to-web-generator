@@ -11,7 +11,7 @@ import {
   useActiveCode,
   SandpackStack,
 } from "@codesandbox/sandpack-react";
-import { FiCode, FiEye, FiTerminal } from "lucide-react";
+import { Code, Eye, Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -74,7 +74,7 @@ const SandpackPreview: React.FC<SandpackPreviewProps> = ({
         options={{
           visibleFiles: options.visibleFiles,
           activeFile: options.activeFile,
-          recompileMode: autorun ? "immediate" : "manual",
+          recompileMode: autorun ? "immediate" : "delayed",
           recompileDelay: 500,
         }}
       >
@@ -93,16 +93,16 @@ const SandpackPreview: React.FC<SandpackPreviewProps> = ({
             <TabsList className="ml-auto">
               {layout !== "preview-only" && (
                 <TabsTrigger value="code" className="flex items-center gap-2">
-                  <FiCode size={14} /> Code
+                  <Code size={14} /> Code
                 </TabsTrigger>
               )}
               {layout !== "editor-only" && (
                 <TabsTrigger value="preview" className="flex items-center gap-2">
-                  <FiEye size={14} /> Preview
+                  <Eye size={14} /> Preview
                 </TabsTrigger>
               )}
               <TabsTrigger value="console" className="flex items-center gap-2">
-                <FiTerminal size={14} /> Console
+                <Terminal size={14} /> Console
               </TabsTrigger>
             </TabsList>
           </div>

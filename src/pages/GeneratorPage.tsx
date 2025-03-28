@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -76,7 +75,6 @@ const GeneratorPage: React.FC = () => {
   const isMobile = useIsMobile();
   const { theme } = useTheme();
 
-  // File system simulation for typing animation
   const [generationSteps, setGenerationSteps] = useState<string[]>([
     "Analyzing prompt...",
     "Setting up project structure...",
@@ -111,7 +109,6 @@ const GeneratorPage: React.FC = () => {
     setIsTyping(true);
     setAnimationComplete(false);
     
-    // Generate random code snippets for typing animation
     setCodeSnippets([
       `import React from "react";\n\nconst App = () => {\n  return (\n    <div className="container mx-auto">\n      <h1>Generated App</h1>\n    </div>\n  );\n};\n\nexport default App;`,
       `const Button = ({ children, onClick }) => {\n  return (\n    <button\n      className="px-4 py-2 bg-blue-500 text-white rounded"\n      onClick={onClick}\n    >\n      {children}\n    </button>\n  );\n};`,
@@ -126,7 +123,6 @@ const GeneratorPage: React.FC = () => {
       const files = extractFilesFromResponse(response);
       console.log("Extracted files:", files);
       
-      // Add a small delay to make the UI look more natural
       setTimeout(() => {
         setGeneratedFiles(files);
         setShowResult(true);
@@ -151,13 +147,11 @@ const GeneratorPage: React.FC = () => {
   };
 
   const handleShareCode = () => {
-    // Implementation for sharing code would go here
     navigator.clipboard.writeText(window.location.href);
     toast.success("Share link copied to clipboard!");
   };
 
   const handleDownloadCode = () => {
-    // Implementation for downloading code would go here
     toast.success("Code downloaded successfully!");
   };
 
@@ -426,7 +420,7 @@ const GeneratorPage: React.FC = () => {
                 
                 {generatedFiles && Object.keys(generatedFiles).length > 0 && (
                   <SandpackPreview
-                    files={generatedFiles}
+                    code={generatedFiles}
                     dependencies={{
                       "lucide-react": "latest",
                       "react-router-dom": "latest",

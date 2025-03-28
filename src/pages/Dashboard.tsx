@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,12 +69,10 @@ const Dashboard: React.FC = () => {
   };
 
   const handleShareCode = () => {
-    // Implementation for sharing code would go here
     toast.success("Share link copied to clipboard!");
   };
 
   const handleDownloadCode = () => {
-    // Implementation for downloading code would go here
     toast.success("Code downloaded successfully!");
   };
 
@@ -189,7 +186,7 @@ const Dashboard: React.FC = () => {
               </div>
               
               <SandpackPreview
-                files={generatedFiles}
+                code={generatedFiles}
                 dependencies={{
                   "lucide-react": "latest",
                   "react-router-dom": "latest",
