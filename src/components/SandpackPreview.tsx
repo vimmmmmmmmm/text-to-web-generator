@@ -173,7 +173,8 @@ const CodePanel = ({ autoRun = true }) => {
           <div className="h-full border rounded-md overflow-auto p-4 space-y-4 text-sm">
             <h3 className="font-medium text-base">Project Dependencies</h3>
             <div className="grid gap-2">
-              {Object.entries(sandpack?.customSetup?.dependencies || {}).map(([name, version]) => (
+              {Object.entries(sandpack.files["/package.json"] ? 
+                JSON.parse(sandpack.files["/package.json"].code).dependencies || {} : {}).map(([name, version]) => (
                 <div key={name} className="flex items-center justify-between p-2 border rounded-md">
                   <div>
                     <span className="font-medium">{name}</span>
