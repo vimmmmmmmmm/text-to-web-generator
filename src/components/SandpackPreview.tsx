@@ -173,11 +173,11 @@ const CodePanel = ({ autoRun = true }) => {
           <div className="h-full border rounded-md overflow-auto p-4 space-y-4 text-sm">
             <h3 className="font-medium text-base">Project Dependencies</h3>
             <div className="grid gap-2">
-              {Object.entries(sandpack?.dependencies || {}).map(([name, version]) => (
+              {Object.entries(sandpack?.customSetup?.dependencies || {}).map(([name, version]) => (
                 <div key={name} className="flex items-center justify-between p-2 border rounded-md">
                   <div>
                     <span className="font-medium">{name}</span>
-                    <span className="text-xs ml-2 text-muted-foreground">{version}</span>
+                    <span className="text-xs ml-2 text-muted-foreground">{typeof version === 'string' ? version : 'latest'}</span>
                   </div>
                   <Check className="h-4 w-4 text-green-500" />
                 </div>
@@ -367,7 +367,7 @@ body {
             ) || "/index.js",
           }}
           options={{
-            autorun: autorun
+            autorun
           }}
         >
           {isLoading && (
@@ -441,7 +441,7 @@ body {
           ) || "/index.js",
         }}
         options={{
-          autorun: autorun
+          autorun
         }}
       >
         {isLoading && (
