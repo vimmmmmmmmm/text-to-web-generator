@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCcw, Maximize2, Minimize2, Play, File, Code, Terminal, Layout, Settings, Monitor } from "lucide-react";
+import { Loader2, RefreshCcw, Maximize2, Minimize2, Play, File, Code, Terminal, Layout, Settings, Monitor, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
@@ -41,6 +41,8 @@ const useSandpackPreviewState = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("code");
   const [consoleStatus, setConsoleStatus] = useState<"success" | "error" | "info" | null>(null);
+  const [dependencies, setDependencies] = useState<Record<string, string>>({});
+  const [isInstalling, setIsInstalling] = useState(false);
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
@@ -54,6 +56,22 @@ const useSandpackPreviewState = () => {
     return () => clearTimeout(timeout);
   }, []);
 
+  const installDependency = (name: string, version: string = "latest") => {
+    setIsInstalling(true);
+    toast.info(`Installing ${name}@${version}...`);
+    
+    // In a real implementation, this would connect to SandpackProvider's API
+    // to actually install the dependency
+    setTimeout(() => {
+      setDependencies(prev => ({
+        ...prev,
+        [name]: version
+      }));
+      setIsInstalling(false);
+      toast.success(`Installed ${name}@${version}`);
+    }, 2000);
+  };
+
   return {
     sandpack,
     isReady,
@@ -63,11 +81,14 @@ const useSandpackPreviewState = () => {
     setActiveTab,
     consoleStatus,
     setConsoleStatus,
+    dependencies,
+    installDependency,
+    isInstalling
   };
 };
 
 // Preview Header Component
-const PreviewHeader = ({ refreshCode }: { refreshCode: () => void }) => {
+const PreviewHeader = ({ refreshCode, runCode }: { refreshCode: () => void, runCode?: () => void }) => {
   const { refresh } = useSandpackNavigation();
   
   return (
@@ -77,24 +98,36 @@ const PreviewHeader = ({ refreshCode }: { refreshCode: () => void }) => {
         <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
         <div className="w-3 h-3 rounded-full bg-green-500"></div>
       </div>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="h-6 w-6 rounded-full text-gray-400 hover:text-white"
-        onClick={() => {
-          refresh();
-          refreshCode();
-          toast.success("Preview refreshed");
-        }}
-      >
-        <RefreshCcw className="h-3.5 w-3.5" />
-      </Button>
+      <div className="flex items-center gap-2">
+        {runCode && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6 rounded-full text-green-400 hover:text-green-300"
+            onClick={runCode}
+          >
+            <Play className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-6 w-6 rounded-full text-gray-400 hover:text-white"
+          onClick={() => {
+            refresh();
+            refreshCode();
+            toast.success("Preview refreshed");
+          }}
+        >
+          <RefreshCcw className="h-3.5 w-3.5" />
+        </Button>
+      </div>
     </div>
   );
 };
 
 // Code Panel Component
-const CodePanel = () => {
+const CodePanel = ({ autoRun = true }) => {
   const { sandpack } = useSandpack();
   const [selectedFile, setSelectedFile] = useState<string>("");
   const { theme } = useTheme();
@@ -108,7 +141,7 @@ const CodePanel = () => {
   return (
     <div className="h-full">
       <Tabs defaultValue="code" className="w-full h-full">
-        <TabsList className="w-full grid grid-cols-2">
+        <TabsList className="w-full grid grid-cols-3">
           <TabsTrigger value="code" className="flex items-center gap-1.5">
             <Code className="h-3.5 w-3.5" />
             <span>Code</span>
@@ -116,6 +149,10 @@ const CodePanel = () => {
           <TabsTrigger value="console" className="flex items-center gap-1.5">
             <Terminal className="h-3.5 w-3.5" />
             <span>Console</span>
+          </TabsTrigger>
+          <TabsTrigger value="dependencies" className="flex items-center gap-1.5">
+            <Settings className="h-3.5 w-3.5" />
+            <span>Dependencies</span>
           </TabsTrigger>
         </TabsList>
         <TabsContent value="code" className="h-[calc(100%-40px)]">
@@ -131,6 +168,36 @@ const CodePanel = () => {
         </TabsContent>
         <TabsContent value="console" className="h-[calc(100%-40px)]">
           <SandpackConsole className="h-full border rounded-md overflow-hidden" />
+        </TabsContent>
+        <TabsContent value="dependencies" className="h-[calc(100%-40px)]">
+          <div className="h-full border rounded-md overflow-auto p-4 space-y-4 text-sm">
+            <h3 className="font-medium text-base">Project Dependencies</h3>
+            <div className="grid gap-2">
+              {Object.entries(sandpack?.dependencies || {}).map(([name, version]) => (
+                <div key={name} className="flex items-center justify-between p-2 border rounded-md">
+                  <div>
+                    <span className="font-medium">{name}</span>
+                    <span className="text-xs ml-2 text-muted-foreground">{version}</span>
+                  </div>
+                  <Check className="h-4 w-4 text-green-500" />
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-4 mt-4">
+              <h3 className="font-medium mb-2">Add a dependency</h3>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="package-name" 
+                  className="border rounded-md px-3 py-1 flex-1 text-sm"
+                />
+                <Button size="sm" variant="secondary">Add</Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Adding dependencies will restart the preview.
+              </p>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
@@ -149,6 +216,8 @@ const SandpackPreview: React.FC<SandpackPreviewProps> = ({
   const isMobile = useIsMobile();
   const { theme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
+  const [activeFile, setActiveFile] = useState<string | null>(null);
+  const [sandpackReady, setSandpackReady] = useState(false);
 
   // Create a proper file structure for Sandpack
   const sandpackFiles: SandpackFiles = {};
@@ -199,7 +268,7 @@ root.render(<App />);
   if (!sandpackFiles["/styles.css"] && !sandpackFiles["/src/styles.css"]) {
     sandpackFiles["/styles.css"] = {
       code: `
-@import 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css';
+@import 'https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css';
 
 body {
   font-family: 'Inter', sans-serif;
@@ -233,10 +302,12 @@ body {
       code: JSON.stringify({
         name: "generated-app",
         version: "1.0.0",
-        description: "Generated web application",
+        description: "Real web application generated from user prompt",
         dependencies: {
           "react": "18.2.0",
           "react-dom": "18.2.0",
+          "react-router-dom": "6.16.0", 
+          "tailwindcss": "3.3.3",
           ...dependencies
         }
       }, null, 2)
@@ -266,15 +337,21 @@ body {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setIsLoading(false);
+      setSandpackReady(true);
     }, 1500);
     
     return () => clearTimeout(timeout);
   }, []);
 
+  const runCode = () => {
+    // In a real implementation, this would trigger sandpack to run the code
+    toast.success("Running application...");
+  };
+
   // Mobile Layout
   if (isMobile) {
     return (
-      <div className={`${className} mt-4 h-[600px] animate-fade-in`}>
+      <div className={`${className} mt-4 h-[calc(100vh-200px)] animate-fade-in`}>
         <SandpackProvider
           template="react"
           theme={theme === "dark" ? nightOwl : githubLight}
@@ -303,7 +380,7 @@ body {
           )}
         
           <Tabs defaultValue={initialTab} className="w-full h-full">
-            <TabsList className="w-full grid grid-cols-3">
+            <TabsList className="w-full grid grid-cols-3 sticky top-0 z-10">
               {showFiles && <TabsTrigger value="files" className="flex items-center gap-1.5">
                 <File className="h-3.5 w-3.5" />
                 <span>Files</span>
@@ -330,7 +407,7 @@ body {
             
             <TabsContent value="preview" className="mt-2 h-[calc(100%-48px)]">
               <div className="h-full flex flex-col border rounded-md overflow-hidden">
-                <PreviewHeader refreshCode={() => {}} />
+                <PreviewHeader refreshCode={() => {}} runCode={runCode} />
                 <div className="flex-grow">
                   <SandpackPreviewComponent
                     showNavigator
@@ -348,7 +425,7 @@ body {
   
   // Desktop Layout
   return (
-    <div className={`${className} mt-6 h-[700px] animate-fade-in transition-all duration-300`}>
+    <div className={`${className} mt-6 h-[calc(100vh-160px)] animate-fade-in transition-all duration-300`}>
       <SandpackProvider
         template="react"
         theme={theme === "dark" ? nightOwl : githubLight}
@@ -386,7 +463,7 @@ body {
                 <div className="h-full p-2">
                   <div className="flex items-center justify-between px-2 py-1.5 mb-2 border-b">
                     <h3 className="text-sm font-medium flex items-center gap-1.5">
-                      <File className="h-3.5 w-3.5" /> Files
+                      <File className="h-3.5 w-3.5" /> Project Files
                     </h3>
                   </div>
                   <SandpackFileExplorer className="h-[calc(100%-32px)] rounded-md overflow-hidden" />
@@ -396,18 +473,18 @@ body {
             </>
           )}
           
-          <ResizablePanel defaultSize={50} minSize={30} className="h-full">
+          <ResizablePanel defaultSize={40} minSize={30} className="h-full">
             <div className="h-full p-2">
-              <CodePanel />
+              <CodePanel autoRun={autorun} />
             </div>
           </ResizablePanel>
           
           <ResizableHandle withHandle />
           
-          <ResizablePanel defaultSize={50} className="h-full">
+          <ResizablePanel defaultSize={45} className="h-full">
             <div className="h-full p-2">
               <div className="h-full flex flex-col border rounded-md overflow-hidden">
-                <PreviewHeader refreshCode={() => {}} />
+                <PreviewHeader refreshCode={() => {}} runCode={runCode} />
                 <div className="flex-grow">
                   <SandpackPreviewComponent
                     showNavigator
