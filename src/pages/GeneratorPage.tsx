@@ -14,7 +14,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProgressIndicator from "@/components/ProgressIndicator";
 import TypingAnimation from "@/components/TypingAnimation";
-import { generateWebApp, extractFilesFromResponse } from "@/services/gemini";
+import { generateWebApp, extractFilesFromResponse, analyzeRequiredDependencies } from "@/services/gemini";
 import { Loader2, Zap, Save, Share, Code, Eye, LayoutGrid, FileCode, Settings, Info, CheckCircle, DownloadCloud, Copy, Terminal, PanelRight, PanelLeft, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 import GeminiLogo from "@/components/ui/GeminiLogo";
@@ -23,6 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
+import { FileStructureDisplay } from "@/services/FileStructureDisplay";
 
 interface ExampleTemplate {
   title: string;
@@ -68,10 +69,11 @@ const GeneratorPage: React.FC = () => {
   const [advancedOptions, setAdvancedOptions] = useState(false);
   const [autoRunCode, setAutoRunCode] = useState(true);
   const [selectedFramework, setSelectedFramework] = useState("react");
-  const [viewMode, setViewMode] = useState<"split" | "preview-only" | "editor-only">("split");
+  const [viewMode, setViewMode] = useState<"split" | "preview-only" | "editor-only">("preview-only");
   const [animationComplete, setAnimationComplete] = useState(false);
   const [codeSnippets, setCodeSnippets] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [activePreviewTab, setActivePreviewTab] = useState<"preview" | "code" | "console">("preview");
   const isMobile = useIsMobile();
   const { theme } = useTheme();
 
@@ -117,17 +119,20 @@ const GeneratorPage: React.FC = () => {
     
     try {
       toast.info("Generating your web application...", { duration: 10000 });
-      const response = await generateWebApp(prompt);
+      const response = await generateWebApp(prompt, { framework: selectedFramework });
       console.log("Raw API response:", response);
       
       const files = extractFilesFromResponse(response);
       console.log("Extracted files:", files);
+      
+      const detectedDependencies = analyzeRequiredDependencies(files);
       
       setTimeout(() => {
         setGeneratedFiles(files);
         setShowResult(true);
         setIsTyping(false);
         setAnimationComplete(true);
+        setActivePreviewTab("preview");
         toast.success("Web application generated successfully!");
       }, 1500);
     } catch (error) {
@@ -419,20 +424,33 @@ const GeneratorPage: React.FC = () => {
                 </div>
                 
                 {generatedFiles && Object.keys(generatedFiles).length > 0 && (
-                  <SandpackPreview
-                    code={generatedFiles}
-                    dependencies={{
-                      "lucide-react": "latest",
-                      "react-router-dom": "latest",
-                      "tailwindcss": "^3.3.0",
-                      "@tailwindcss/forms": "^0.5.7",
-                      "framer-motion": "^10.12.16"
-                    }}
-                    className="w-full"
-                    showFiles={true}
-                    layout={viewMode}
-                    autorun={autoRunCode}
-                  />
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <Card className="lg:col-span-1 h-fit">
+                      <CardHeader>
+                        <CardTitle className="text-lg">File Structure</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <FileStructureDisplay files={generatedFiles} />
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="lg:col-span-3">
+                      <SandpackPreview
+                        code={generatedFiles}
+                        dependencies={{
+                          "lucide-react": "latest",
+                          "react-router-dom": "latest",
+                          "tailwindcss": "^3.3.0",
+                          "@tailwindcss/forms": "^0.5.7",
+                          "framer-motion": "^10.12.16"
+                        }}
+                        className="w-full"
+                        showFiles={true}
+                        layout={viewMode}
+                        autorun={autoRunCode}
+                      />
+                    </div>
+                  </div>
                 )}
               </motion.div>
             )}

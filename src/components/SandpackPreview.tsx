@@ -14,6 +14,7 @@ import {
 import { Code, Eye, Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import DependencyInstaller from "./DependencyInstaller";
 
 type SandpackPreviewProps = {
   code: Record<string, string>;
@@ -57,12 +58,28 @@ const SandpackPreview: React.FC<SandpackPreviewProps> = ({
   className,
 }) => {
   const [activeTab, setActiveTab] = useState<"preview" | "code" | "console">("code");
+  const [isInstallingDeps, setIsInstallingDeps] = useState(true);
+  const [installCompleted, setInstallCompleted] = useState(false);
   
   // Create a customSetup object for dependencies
   const customSetup = {
     dependencies: dependencies,
-    entry: "index.js"
+    entry: Object.keys(code).find(file => file.includes("index")) || "index.js"
   };
+
+  useEffect(() => {
+    // Simulate dependency installation process
+    if (Object.keys(dependencies).length > 0) {
+      setIsInstallingDeps(true);
+      const timer = setTimeout(() => {
+        setIsInstallingDeps(false);
+        setInstallCompleted(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setIsInstallingDeps(false);
+    }
+  }, [dependencies]);
 
   return (
     <div className={cn("w-full h-full rounded-lg overflow-hidden border border-border", className)}>
@@ -107,6 +124,19 @@ const SandpackPreview: React.FC<SandpackPreviewProps> = ({
             </TabsList>
           </div>
           
+          {isInstallingDeps && Object.keys(dependencies).length > 0 && (
+            <div className="p-4">
+              <DependencyInstaller 
+                dependencies={dependencies}
+                isInstalling={true}
+                onComplete={() => {
+                  setIsInstallingDeps(false);
+                  setInstallCompleted(true);
+                }}
+              />
+            </div>
+          )}
+          
           {layout !== "preview-only" && (
             <TabsContent value="code" className="mt-0">
               <SandpackStack>
@@ -127,6 +157,7 @@ const SandpackPreview: React.FC<SandpackPreviewProps> = ({
                 <SandpackPreviewComponent
                   showNavigator={options.showNavigator}
                   className="h-[500px] sm:h-[600px] md:h-[700px] lg:h-[800px]"
+                  showRefreshButton={true}
                 />
               </SandpackStack>
             </TabsContent>

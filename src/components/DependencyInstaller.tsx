@@ -38,7 +38,7 @@ const DependencyInstaller: React.FC<DependencyInstallerProps> = ({
           setIsComplete(true);
           if (onComplete) onComplete();
         }
-      }, 800);
+      }, 600); // Speed up installation simulation
       
       return () => clearInterval(installInterval);
     }
