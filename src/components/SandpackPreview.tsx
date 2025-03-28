@@ -13,13 +13,7 @@ import {
 } from "@codesandbox/sandpack-react";
 import { FiCode, FiEye, FiTerminal } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CodeMirror } from "@uiw/react-codemirror";
-import { javascript } from "@codemirror/lang-javascript";
-import { json } from "@codemirror/lang-json";
-import { css } from "@codemirror/lang-css";
-import { html } from "@codemirror/lang-html";
 
 type SandpackPreviewProps = {
   code: Record<string, string>;
@@ -36,6 +30,11 @@ type SandpackPreviewProps = {
     visibleFiles?: string[];
     activeFile?: string;
   };
+  dependencies?: Record<string, string>;
+  showFiles?: boolean;
+  layout?: "split" | "preview-only" | "editor-only";
+  autorun?: boolean;
+  className?: string;
 };
 
 const SandpackPreview: React.FC<SandpackPreviewProps> = ({
@@ -51,38 +50,32 @@ const SandpackPreview: React.FC<SandpackPreviewProps> = ({
     showTabs: true,
     closableTabs: false,
   },
+  dependencies = {},
+  showFiles = true,
+  layout = "split",
+  autorun = true,
+  className,
 }) => {
   const [activeTab, setActiveTab] = useState<"preview" | "code" | "console">("code");
   
-  // Function to get file extension
-  const getLanguage = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'js':
-      case 'jsx':
-      case 'ts':
-      case 'tsx':
-        return javascript();
-      case 'json':
-        return json();
-      case 'css':
-        return css();
-      case 'html':
-        return html();
-      default:
-        return javascript();
-    }
+  // Create a customSetup object for dependencies
+  const customSetup = {
+    dependencies: dependencies,
+    entry: "index.js"
   };
 
   return (
-    <div className="w-full h-full rounded-lg overflow-hidden border border-border">
+    <div className={cn("w-full h-full rounded-lg overflow-hidden border border-border", className)}>
       <SandpackProvider
         theme={theme}
         template={template}
         files={code}
+        customSetup={customSetup}
         options={{
           visibleFiles: options.visibleFiles,
           activeFile: options.activeFile,
+          recompileMode: autorun ? "immediate" : "manual",
+          recompileDelay: 500,
         }}
       >
         <Tabs
@@ -91,47 +84,57 @@ const SandpackPreview: React.FC<SandpackPreviewProps> = ({
           className="w-full"
         >
           <div className="flex justify-between items-center p-2 border-b border-border bg-muted/40">
-            <FileTabs
-              closableTabs={options.closableTabs}
-              className="!bg-transparent"
-            />
+            {showFiles && (
+              <FileTabs
+                closableTabs={options.closableTabs}
+                className="!bg-transparent"
+              />
+            )}
             <TabsList className="ml-auto">
-              <TabsTrigger value="code" className="flex items-center gap-2">
-                <FiCode size={14} /> Code
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="flex items-center gap-2">
-                <FiEye size={14} /> Preview
-              </TabsTrigger>
+              {layout !== "preview-only" && (
+                <TabsTrigger value="code" className="flex items-center gap-2">
+                  <FiCode size={14} /> Code
+                </TabsTrigger>
+              )}
+              {layout !== "editor-only" && (
+                <TabsTrigger value="preview" className="flex items-center gap-2">
+                  <FiEye size={14} /> Preview
+                </TabsTrigger>
+              )}
               <TabsTrigger value="console" className="flex items-center gap-2">
                 <FiTerminal size={14} /> Console
               </TabsTrigger>
             </TabsList>
           </div>
           
-          <TabsContent value="code" className="mt-0">
-            <SandpackStack>
-              <SandpackCodeEditor
-                showLineNumbers={options.showLineNumbers}
-                showInlineErrors={options.showInlineErrors}
-                wrapContent={options.wrapContent}
-                readOnly={options.readOnly}
-                className="h-[500px] sm:h-[600px] md:h-[700px]"
-              />
-            </SandpackStack>
-          </TabsContent>
+          {layout !== "preview-only" && (
+            <TabsContent value="code" className="mt-0">
+              <SandpackStack>
+                <SandpackCodeEditor
+                  showLineNumbers={options.showLineNumbers}
+                  showInlineErrors={options.showInlineErrors}
+                  wrapContent={options.wrapContent}
+                  readOnly={options.readOnly}
+                  className="h-[500px] sm:h-[600px] md:h-[700px] lg:h-[800px]"
+                />
+              </SandpackStack>
+            </TabsContent>
+          )}
           
-          <TabsContent value="preview" className="mt-0">
-            <SandpackStack>
-              <SandpackPreviewComponent
-                showNavigator={options.showNavigator}
-                className="h-[500px] sm:h-[600px] md:h-[700px]"
-              />
-            </SandpackStack>
-          </TabsContent>
+          {layout !== "editor-only" && (
+            <TabsContent value="preview" className="mt-0">
+              <SandpackStack>
+                <SandpackPreviewComponent
+                  showNavigator={options.showNavigator}
+                  className="h-[500px] sm:h-[600px] md:h-[700px] lg:h-[800px]"
+                />
+              </SandpackStack>
+            </TabsContent>
+          )}
           
           <TabsContent value="console" className="mt-0">
             <SandpackStack>
-              <SandpackConsole className="h-[500px] sm:h-[600px] md:h-[700px]" />
+              <SandpackConsole className="h-[500px] sm:h-[600px] md:h-[700px] lg:h-[800px]" />
             </SandpackStack>
           </TabsContent>
         </Tabs>
