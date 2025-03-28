@@ -289,7 +289,9 @@ body {
               (file) => file.includes("index") && file.endsWith(".js")
             ) || "/index.js",
           }}
-          autorun={autorun}
+          options={{
+            autorun: autorun
+          }}
         >
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
@@ -361,7 +363,9 @@ body {
             (file) => file.includes("index") && file.endsWith(".js")
           ) || "/index.js",
         }}
-        autorun={autorun}
+        options={{
+          autorun: autorun
+        }}
       >
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
